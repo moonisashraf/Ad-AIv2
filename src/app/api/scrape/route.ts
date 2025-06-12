@@ -20,7 +20,16 @@ export async function POST(request: Request) {
     }
 
     const data = await backendResponse.json();
-    return NextResponse.json(data);
+    
+    // Ensure the response includes all expected fields
+    const response = {
+      headings: data.headings || [],
+      images: data.images || [],
+      logo: data.logo || null, // Add the logo field
+      error: data.error
+    };
+
+    return NextResponse.json(response);
     
   } catch (error) {
     console.error('API Route Error:', error);

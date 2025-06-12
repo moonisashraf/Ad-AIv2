@@ -1,14 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiExternalLink, FiImage, FiLoader } from 'react-icons/fi';
-
-type ScrapedData = {
-  headings: string[];
-  paragraphs: string[];
-  images: string[];
-  error?: string;
-};
+import BannerPreview from '../components/BannerPreview';
+import MetaFieldsForm from '../components/MetaFieldsForm';
+import { ScrapedData, MetaFields } from './types';
 
 export default function Home() {
   const [websiteUrl, setWebsiteUrl] = useState('');
@@ -16,15 +12,24 @@ export default function Home() {
   const [scrapedData, setScrapedData] = useState<ScrapedData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // New meta fields state
+  const [metaFields, setMetaFields] = useState<MetaFields>({
+    mainHeading: '',
+    subheading: '',
+    bodyText: '',
+    cta: '',
+    logoUrl: '',
+    bannerImages: []
+  });
+
   const handleScrape = async () => {
     if (!websiteUrl) return;
-    
+
     setIsLoading(true);
     setError(null);
     setScrapedData(null);
 
     try {
-      // Basic URL validation
       if (!websiteUrl.startsWith('http')) {
         throw new Error('Please include http:// or https://');
       }
@@ -39,7 +44,7 @@ export default function Home() {
 
       const data = await response.json();
       console.log('Full response:', { status: response.status, data });
-      
+
       if (!response.ok || data.error) {
         throw new Error(data.error || 'Request failed');
       }
@@ -52,6 +57,20 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (scrapedData) {
+      setMetaFields({
+        mainHeading: scrapedData.headings[0] || '',
+        subheading: scrapedData.headings[1] || '',
+        bodyText: scrapedData.headings.slice(2).join(' ') || '',
+        cta: 'Click Here',
+        logoUrl: scrapedData.logo || '', // Use the new logo field
+        bannerImages: scrapedData.images.slice(0) || []
+      });
+    }
+  }, [scrapedData]);
+  
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -127,31 +146,13 @@ export default function Home() {
                         <div
                           key={index}
                           className="p-3 rounded-lg border"
-                          style={{ 
+                          style={{
                             backgroundColor: 'var(--card-bg)',
                             borderColor: 'var(--card-border)'
                           }}
                         >
                           <h4 className="font-medium" style={{ color: 'var(--foreground)' }}>{heading}</h4>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Paragraphs */}
-                {scrapedData.paragraphs.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium mb-3" style={{ color: 'var(--foreground)' }}>Text Content</h3>
-                    <div className="space-y-3">
-                      {scrapedData.paragraphs.map((paragraph, index) => (
-                        <p
-                          key={index}
-                          className="text-gray-600 leading-relaxed"
-                          style={{ color: 'var(--foreground)' }}
-                        >
-                          {paragraph}
-                        </p>
                       ))}
                     </div>
                   </div>
@@ -196,6 +197,16 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+                {/* Meta Fields Form */}
+                <div className="mt-8">
+                  <MetaFieldsForm metaFields={metaFields} onChange={setMetaFields} />
+                </div>
+
+                {/* Live Banner Preview */}
+                <div className="mt-8 flex justify-center">
+                  <BannerPreview metaFields={metaFields} />
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">

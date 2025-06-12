@@ -53,6 +53,9 @@ def scrape_website(url):
             except:
                 print("No cookie consent found", file=sys.stderr)  # Debug log
 
+            # Wait for logos or header to load
+            page.wait_for_timeout(3000)  # Wait 3 seconds to let late-loading assets appear
+
             # Add artificial delay to let page settle
             page.wait_for_timeout(2000)
 
@@ -67,6 +70,33 @@ def scrape_website(url):
                     .map(el => el.textContent.trim());
             }''')
             
+            # Extract Logo (supports img and SVG)
+            logo = page.evaluate('''() => {
+                // Check for logo IMG first
+                const logoSelectors = [
+                    'img[alt*="logo" i]',
+                    'img[class*="logo" i]',
+                    'header img',
+                    'nav img'
+                ];
+
+                for (const selector of logoSelectors) {
+                    const img = document.querySelector(selector);
+                    if (img && img.src) {
+                        return img.src.startsWith('//') ? 'https:' + img.src : img.src;
+                    }
+                }
+
+                // If no img logo found, look for SVG logo
+                const svgLogo = document.querySelector('header svg, nav svg, svg[aria-label*="logo" i]');
+                if (svgLogo) {
+                    return 'svg-logo'; // You can handle this separately in frontend
+                }
+
+                return null;
+            }''')
+
+            # Get other images (excluding the logo)
             images = page.evaluate('''() => {
                 // Get visible images with size filtering
                 return Array.from(document.querySelectorAll('img[src]'))
@@ -91,7 +121,8 @@ def scrape_website(url):
             result = {
                 "headings": headings or [],
                 "paragraphs": [],  # Removed paragraphs as LG uses minimal text
-                "images": images or []
+                "images": images or [],
+                "logo": logo
             }
             
             # Ensure we output valid JSON
@@ -104,7 +135,8 @@ def scrape_website(url):
             result = {
                 "error": error_msg,
                 "headings": ["Timeout occurred - partial results"],
-                "images": []
+                "images": [],
+                "logo": None
             }
             print(json.dumps(result))
             return result
