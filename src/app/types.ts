@@ -12,13 +12,24 @@ export type ScrapedData = {
   error?: string;
 };
 
-export type DesignOptions = {
-  templateName: string;
-  backgroundType: 'solid' | 'image';
+// NEW: Defines the structure for an AI-generated design
+export type AiDesign = {
   backgroundColor: string;
-  primaryTextColor: string;
-  ctaBackgroundColor: string;
-  ctaTextColor: string;
+  elements: Array<{
+    type: 'logo' | 'headline' | 'subheading' | 'cta' | 'image';
+    position: { top: string; left: string; width: string; height: string; };
+    style: {
+      color?: string;
+      fontFamily?: string;
+      fontSize: string;
+      fontWeight: 'normal' | 'bold' | 'bolder';
+      textAlign: 'left' | 'center' | 'right';
+      backgroundColor?: string;
+      borderRadius?: string;
+      // For image masking
+      clipPath?: string;
+    };
+  }>;
 };
 
 export type MetaFields = {
@@ -27,10 +38,7 @@ export type MetaFields = {
   cta: string;
   logoUrl: string;
   bannerImage: string;
-  design: DesignOptions;
-};
-
-export type AiSuggestions = {
-  headlines: string[];
-  subheadings: string[];
+  brandColors: string[];
+  // The active design for the banners
+  design: AiDesign | null; 
 };
