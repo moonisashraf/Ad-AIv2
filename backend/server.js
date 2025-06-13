@@ -14,15 +14,17 @@ app.use(express.json());
 app.post('/api/scrape', (req, res) => {
   const { url } = req.body;
   
-  // Set timeout to 30 seconds
-  res.setTimeout(30000, () => {
+  // Set timeout to 60 seconds for complex pages
+  res.setTimeout(60000, () => {
     res.status(504).json({ error: "Scraping timeout" });
   });
 
-  // Use Python from virtual environment
-  const pythonPath = path.join(__dirname, '../.venv/Scripts/python');
+  // More robust path to the python executable and scraper script
+  const pythonPath = path.resolve(__dirname, '..', '.venv', 'Scripts', 'python.exe');
+  const scraperScript = path.resolve(__dirname, '..', 'scraper', 'scraper.py');
+
   const pythonProcess = spawn(pythonPath, [
-    path.join(__dirname, '../scraper/scraper.py'),
+    scraperScript,
     url
   ]);
 
@@ -38,8 +40,6 @@ app.post('/api/scrape', (req, res) => {
 
   pythonProcess.on('close', (code) => {
     console.log('Python process exited with code:', code);
-    console.log('Python output:', data);
-    console.log('Python errors:', error);
     
     if (code !== 0) {
       console.error('Python script failed:', error);
@@ -47,7 +47,6 @@ app.post('/api/scrape', (req, res) => {
     }
 
     try {
-      // Try to parse the last line of output as JSON
       const lines = data.trim().split('\n');
       const lastLine = lines[lines.length - 1];
       const result = JSON.parse(lastLine);
@@ -59,6 +58,7 @@ app.post('/api/scrape', (req, res) => {
       res.json(result);
     } catch (e) {
       console.error('JSON parse error:', e);
+      console.error('Raw output from python:', data);
       res.status(500).json({ error: 'Invalid JSON from Python' });
     }
   });

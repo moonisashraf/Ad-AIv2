@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic'; // Important for serverless functions
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   const { url } = await request.json();
@@ -21,11 +21,11 @@ export async function POST(request: Request) {
 
     const data = await backendResponse.json();
     
-    // Ensure the response includes all expected fields
     const response = {
       headings: data.headings || [],
       images: data.images || [],
-      logo: data.logo || null, // Add the logo field
+      logo: data.logo || null,
+      brandColors: data.brandColors || [], // Add brandColors
       error: data.error
     };
 
